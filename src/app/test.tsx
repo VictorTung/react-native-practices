@@ -1,80 +1,47 @@
-import { useRef, useState } from "react";
-import { FlatList, SafeAreaView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRef } from "react";
+import { Animated, Button, SafeAreaView, StyleSheet } from "react-native";
 
-// 1. Define fixed dimensions for layout precision
-const ITEM_HEIGHT = 70;
-const INDEX_BAR_WIDTH = 30;
+export default function NativeAnimationExample() {
+    // 1. Initialize Animated Values using useRef to persist them across re-renders
+    const fadeAnim = useRef(new Animated.Value(0)).current; // Starts invisible
+    const slideAnim = useRef(new Animated.Value(100)).current; // Starts 100px down
 
-interface DataItem {
-    id: string;
-    name: string;
-    group: string;
-}
+    const handleAnimate = () => {
+        // Reset values to their starting points if you want to replay it
+        fadeAnim.setValue(0);
+        slideAnim.setValue(100);
 
-// Generate Mock Alphabetical Data
-const ALPHABET = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-const MOCK_DATA: DataItem[] = ALPHABET.flatMap((letter, index) =>
-    Array.from({ length: 3 }, (_, i) => ({
-        id: `${letter}-${index}-${i}`,
-        name: `${letter} - Contact Person ${i + 1}`,
-        group: letter,
-    })),
-);
-
-export default function IndexedList() {
-    const flatListRef = useRef<FlatList<DataItem>>(null);
-    const [activeLetter, setActiveLetter] = useState<string>("");
-
-    // 2. Map each alphabet letter to its first occurrence index in the list
-    const getIndexForGroup = (letter: string): number => {
-        return MOCK_DATA.findIndex((item) => item.group === letter);
-    };
-
-    // 3. Trigger precise scrolling on index press
-    const handleIndexPress = (letter: string) => {
-        const targetIndex = getIndexForGroup(letter);
-
-        if (targetIndex !== -1) {
-            setActiveLetter(letter);
-            flatListRef.current?.scrollToIndex({
-                index: targetIndex,
-                animated: true,
-                viewPosition: 0, // 0 places the item exactly at the top of the viewport
-            });
-        }
+        // 2. Compose the animations together
+        Animated.parallel([
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 800,
+                useNativeDriver: true, // Executes smoothly on the Native Thread
+            }),
+            Animated.spring(slideAnim, {
+                toValue: 0,
+                friction: 5,
+                tension: 40,
+                useNativeDriver: true, // Executes smoothly on the Native Thread
+            }),
+        ]).start(() => {
+            console.log("Animation completed!");
+        });
     };
 
     return (
         <SafeAreaView style={styles.container}>
-            {/* Main Content List */}
-            <FlatList
-                ref={flatListRef}
-                data={MOCK_DATA}
-                keyExtractor={(item) => item.id}
-                renderItem={({ item }) => (
-                    <View style={styles.itemContainer}>
-                        <Text style={styles.itemText}>{item.name}</Text>
-                    </View>
-                )}
-                // 4. CRITICAL: Prevents calculation lag and scrollToIndex crashes
-                getItemLayout={(_, index) => ({
-                    length: ITEM_HEIGHT,
-                    offset: ITEM_HEIGHT * index,
-                    index,
-                })}
+            {/* 3. Wrap the target component in an Animated container */}
+            <Animated.View
+                style={[
+                    styles.box,
+                    {
+                        opacity: fadeAnim, // Map animated value to opacity
+                        transform: [{ translateY: slideAnim }], // Map animated value to translation
+                    },
+                ]}
             />
-
-            {/* Floating Right Index Scrollbar */}
-            <View style={styles.indexBar}>
-                {ALPHABET.map((letter) => {
-                    const hasData = getIndexForGroup(letter) !== -1;
-                    return (
-                        <TouchableOpacity key={letter} onPress={() => handleIndexPress(letter)} disabled={!hasData} style={styles.indexItem}>
-                            <Text style={[styles.indexText, !hasData && styles.disabledText, activeLetter === letter && styles.activeText]}>{letter}</Text>
-                        </TouchableOpacity>
-                    );
-                })}
-            </View>
+            <Button title="Drop & Fade In" onPress={handleAnimate} />
         </SafeAreaView>
     );
 }
@@ -82,45 +49,20 @@ export default function IndexedList() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        flexDirection: "row",
-        backgroundColor: "#fff",
-    },
-    itemContainer: {
-        height: ITEM_HEIGHT,
-        justifyContent: "center",
-        paddingHorizontal: 20,
-        borderBottomWidth: 1,
-        borderBottomColor: "#f0f0f0",
-    },
-    itemText: {
-        fontSize: 16,
-        color: "#333",
-    },
-    indexBar: {
-        position: "absolute",
-        right: 0,
-        top: 40,
-        bottom: 40,
-        width: INDEX_BAR_WIDTH,
-        justifyContent: "center",
         alignItems: "center",
-        zIndex: 10,
+        justifyContent: "center",
+        backgroundColor: "#f5f5f5",
     },
-    indexItem: {
-        paddingVertical: 2,
-        width: "100%",
-        alignItems: "center",
-    },
-    indexText: {
-        fontSize: 11,
-        fontWeight: "bold",
-        color: "#007AFF",
-    },
-    disabledText: {
-        color: "#ccc",
-    },
-    activeText: {
-        color: "#ff3b30",
-        scale: 1.2,
+    box: {
+        width: 120,
+        height: 120,
+        backgroundColor: "#3b82f6",
+        borderRadius: 16,
+        marginBottom: 30,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.1,
+        shadowRadius: 6,
+        elevation: 3,
     },
 });

@@ -87,11 +87,24 @@ export default function EcosystemScreen() {
     };
 
     useEffect(() => {
-        const timer = setTimeout(() => {
-            handleMeasure();
-        }, 100);
-        return () => clearTimeout(timer);
+        const idleId = requestIdleCallback((deadline) => {
+            console.log(deadline.timeRemaining());
+            // Check if we have enough time left in this idle period (optional but good practice)
+            if (deadline.timeRemaining() > 0 || deadline.didTimeout) {
+                // Run your deferred heavy task here (e.g., loading extra data, heavy formatting)
+                handleMeasure();
+            }
+        });
+
+        return () => cancelIdleCallback(idleId);
     }, []);
+
+    // useEffect(() => {
+    //     const timer = setTimeout(() => {
+    //         handleMeasure();
+    //     }, 100);
+    //     return () => clearTimeout(timer);
+    // }, []);
 
     return (
         <View style={styles.screenWrapper}>

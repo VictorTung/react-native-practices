@@ -1,10 +1,10 @@
-import { Button, Pressable, StyleSheet, TextInput } from "react-native";
+import { Button, LayoutChangeEvent, Pressable, StyleSheet, TextInput } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 import { Image } from "expo-image";
 
 import { LinearGradient } from "expo-linear-gradient";
-import { useEffect, useRef, useState } from "react";
+import { useRef, useState } from "react";
 import { Alert, SectionList, Text, View } from "react-native";
 
 const CONTACTS_DATA = [
@@ -201,10 +201,9 @@ export default function ExploreScreen() {
 
     const dynamicGradientStyle = [styles.gradient, { height: gradientHeight }];
 
-    const handleMeasure = () => {
-        searchBarRef.current?.measure((x, y, width, height, pageX, pageY) => {
-            setGradientHeight(pageY + height);
-        });
+    const handleOnLayoutMeasure = (event: LayoutChangeEvent) => {
+        const { x, y, width, height } = event.nativeEvent.layout;
+        setGradientHeight(y + height);
     };
 
     const handleContactPress = (name: string) => {
@@ -223,13 +222,6 @@ export default function ExploreScreen() {
             });
         }
     };
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            handleMeasure();
-        }, 100);
-        return () => clearTimeout(timer);
-    }, []);
 
     return (
         <View style={styles.screenContainer}>
@@ -255,7 +247,8 @@ export default function ExploreScreen() {
                     </View>
                 </View>
 
-                <View style={styles.searchBar} ref={searchBarRef}>
+                <View style={styles.searchBar} ref={searchBarRef} onLayout={handleOnLayoutMeasure}>
+                    {/* <View style={styles.searchBar} ref={searchBarRef}> */}
                     <Image style={styles.searchIcon} source={require("@/assets/images/magnifyingGlass.svg")} />
                     <TextInput style={styles.searchInput} placeholder="搜索联系人/群組" />
                 </View>
@@ -286,7 +279,7 @@ export default function ExploreScreen() {
                         showsVerticalScrollIndicator={false}
                         renderItem={({ item }) => (
                             <Pressable
-                                onPress={() => handleContactPress(item)}
+                                onPress={() => handleContactPress(item.name)}
                                 style={({ pressed }) => [styles.itemContainer, { backgroundColor: pressed ? "#f0f0f0" : "#ffffff" }]}
                             >
                                 <View style={styles.itemInner}>

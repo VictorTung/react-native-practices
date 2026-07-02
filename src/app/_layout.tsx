@@ -1,4 +1,3 @@
-// import { createIconSetFromIcoMoon } from 'react-native-vector-icons';
 import { Image } from "expo-image";
 import { DarkTheme, DefaultTheme, Tabs, ThemeProvider } from "expo-router";
 import { StyleSheet, useColorScheme } from "react-native";

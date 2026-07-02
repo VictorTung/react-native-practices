@@ -1,7 +1,7 @@
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
-import { FlatList, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
+import { FlatList, LayoutChangeEvent, Pressable, StyleSheet, Text, TextInput, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const CHAT_DATA = [
@@ -98,22 +98,40 @@ const CHAT_DATA = [
 type ChatItem = (typeof CHAT_DATA)[0];
 
 export default function MessageScreen() {
+    const testRef = useRef<View | null>(null);
     const searchBarRef = useRef<View | null>(null);
     const [gradientHeight, setGradientHeight] = useState(0);
 
     const dynamicGradientStyle = [styles.gradient, { height: gradientHeight }];
 
     const handleMeasure = () => {
-        searchBarRef.current?.measure((x, y, width, height, pageX, pageY) => {
-            setGradientHeight(pageY + height);
+        searchBarRef.current?.measureInWindow((x, y, width, height) => {
+            console.log("Measured in window:", { x, y, width, height });
+            setGradientHeight(y + height);
+            y;
         });
     };
 
+    const handleOnLayoutMeasure = (event: LayoutChangeEvent) => {
+        const { x, y, width, height } = event.nativeEvent.layout;
+        console.log("Layout measured:", { x, y, width, height });
+        setGradientHeight(y + height);
+        handleMeasure();
+    };
+
+    // const idleId = requestIdleCallback((deadline) => {
+    //     // Check if we have enough time left in this idle period (optional but good practice)
+    //     if ((deadline.timeRemaining() > 0 || deadline.didTimeout) && gradientHeight < 100) {
+    //         // Run your deferred heavy task here (e.g., loading extra data, heavy formatting)
+    //         handleMeasure();
+    //     }
+    // });
     useEffect(() => {
-        const timer = setTimeout(() => {
-            handleMeasure();
-        }, 100); //
-        return () => clearTimeout(timer);
+        testRef.current?.measureInWindow((x, y, width, height) => {
+            console.log(y, height);
+        });
+        handleMeasure();
+        // return () => cancelIdleCallback(idleId);
     }, []);
 
     return (
@@ -135,14 +153,22 @@ export default function MessageScreen() {
 
             <SafeAreaView edges={["top"]} style={styles.safeArea}>
                 <View>
-                    <View style={styles.header}>
+                    <View style={styles.header} ref={testRef}>
                         <Text style={styles.headerTitle}>xxchat(13)</Text>
                         <View style={styles.button}>
-                            <Pressable onPress={() => alert("Pressed!")} style={({ pressed }) => [pressed && styles.pressedButton]}>
+                            <Pressable
+                                onPress={() =>
+                                    testRef.current?.measureInWindow((x, y, width, height) => {
+                                        console.log(y, height);
+                                    })
+                                }
+                                style={({ pressed }) => [pressed && styles.pressedButton]}
+                            >
                                 <Image style={styles.addIcon} source={require("@/assets/images/add.svg")} />
                             </Pressable>
                         </View>
                     </View>
+                    {/* <View style={styles.searchContainer} ref={searchBarRef} onLayout={handleOnLayoutMeasure}> */}
                     <View style={styles.searchContainer} ref={searchBarRef}>
                         <Image style={styles.searchIcon} source={require("@/assets/images/magnifyingGlass.svg")} />
                         <TextInput style={styles.searchInput} placeholder="搜索联系人/群組" />

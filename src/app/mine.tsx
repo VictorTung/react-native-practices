@@ -1,7 +1,7 @@
 import { imageMap } from "@/assets/imageMap";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useLayoutEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -47,11 +47,8 @@ export default function App() {
         });
     };
 
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            handleMeasure();
-        }, 100);
-        return () => clearTimeout(timer);
+    useLayoutEffect(() => {
+        handleMeasure();
     }, []);
 
     const dynamicGradientStyle = [styles.gradientBackground, { height: gradientHeight }];
